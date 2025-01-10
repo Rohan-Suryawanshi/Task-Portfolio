@@ -106,7 +106,7 @@ const Login = () => {
          }
 
          const data = await response.json();
-         console.log("Login successful:", data);
+         // console.log("Login successful:", data);
 
          // Store tokens in localStorage
          localStorage.setItem("token", data.token.access);
@@ -117,7 +117,7 @@ const Login = () => {
 
          // Fetch user details
          const userDetails = await get_details();
-         console.log("User Details:", userDetails);
+         // console.log("User Details:", userDetails);
 
          localStorage.setItem("id", userDetails.id);
          localStorage.setItem("email", userDetails.email);
