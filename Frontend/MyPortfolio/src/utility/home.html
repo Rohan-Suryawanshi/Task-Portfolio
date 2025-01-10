@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Tracker Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function toggleAddStockModal() {
+            const modal = document.getElementById('add-stock-modal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-lg font-bold">Portfolio Tracker</h1>
+            <ul class="flex space-x-4">
+                <li><a href="#" class="hover:underline">Dashboard</a></li>
+                <li><button onclick="toggleAddStockModal()" class="hover:underline">Add Stock</button></li>
+                <li><a href="#" class="hover:underline">Profile</a></li>
+                <li><a href="#" class="hover:underline">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg">
+            <div class="p-4 border-b">
+                <h2 class="text-lg font-semibold">Menu</h2>
+            </div>
+            <ul class="p-4 space-y-4">
+                <li><a href="#" class="block text-gray-700 hover:text-blue-600">Dashboard</a></li>
+                <li><a href="#" class="block text-gray-700 hover:text-blue-600">View Stocks</a></li>
+                <li><button onclick="toggleAddStockModal()" class="block text-gray-700 hover:text-blue-600">Add Stock</button></li>
+                <li><a href="#" class="block text-gray-700 hover:text-blue-600">Reports</a></li>
+                <li><a href="#" class="block text-gray-700 hover:text-blue-600">Settings</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+
+            <!-- Portfolio Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-4 shadow rounded-lg">
+                    <h3 class="text-sm text-gray-600">Total Portfolio Value</h3>
+                    <p class="text-2xl font-semibold text-blue-600">$25,678</p>
+                </div>
+                <div class="bg-white p-4 shadow rounded-lg">
+                    <h3 class="text-sm text-gray-600">Top Performing Stock</h3>
+                    <p class="text-lg font-semibold text-green-600">AAPL (+12.3%)</p>
+                </div>
+                <div class="bg-white p-4 shadow rounded-lg">
+                    <h3 class="text-sm text-gray-600">Portfolio Distribution</h3>
+                    <p class="text-sm text-gray-700">Technology: 50%, Finance: 30%, Healthcare: 20%</p>
+                </div>
+            </div>
+
+            <!-- Stock Holdings Table -->
+            <div class="bg-white p-6 shadow rounded-lg mb-6">
+                <h3 class="text-xl font-bold mb-4">Stock Holdings</h3>
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-200 text-left">
+                            <th class="p-2">Stock Name</th>
+                            <th class="p-2">Ticker</th>
+                            <th class="p-2">Quantity</th>
+                            <th class="p-2">Buy Price</th>
+                            <th class="p-2">Current Price</th>
+                            <th class="p-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="p-2">Apple Inc.</td>
+                            <td class="p-2">AAPL</td>
+                            <td class="p-2">10</td>
+                            <td class="p-2">$145</td>
+                            <td class="p-2">$155</td>
+                            <td class="p-2">
+                                <button class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+                                <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                            </td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="p-2">Microsoft</td>
+                            <td class="p-2">MSFT</td>
+                            <td class="p-2">5</td>
+                            <td class="p-2">$310</td>
+                            <td class="p-2">$320</td>
+                            <td class="p-2">
+                                <button class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+                                <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Stock Modal -->
+    <div id="add-stock-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50  flex items-center justify-center">
+        <div class="bg-white p-6  w-7/12 rounded-lg shadow-lg">
+            <h3 class="text-xl font-bold mb-4">Add Stock</h3>
+            <form class="space-y-4">
+                <div>
+                    <label for="stock-name" class="block text-sm font-medium text-gray-700">Stock Name</label>
+                    <input id="stock-name" name="stock-name" type="text" placeholder="Enter stock name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="ticker" class="block text-sm font-medium text-gray-700">Ticker</label>
+                    <input id="ticker" name="ticker" type="text" placeholder="Enter stock ticker" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input id="quantity" name="quantity" type="number" placeholder="Enter quantity" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="buy-price" class="block text-sm font-medium text-gray-700">Buy Price</label>
+                    <input id="buy-price" name="buy-price" type="number" placeholder="Enter buy price" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="toggleAddStockModal()" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Add Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
