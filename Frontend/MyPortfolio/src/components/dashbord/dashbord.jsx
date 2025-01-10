@@ -55,7 +55,7 @@ const Dashboard = () => {
    useEffect(() => {
       const fetchStocks = async () => {
          try {
-            const response = await fetch("http://127.0.0.1:8000/api/stock/", {
+            const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/stock/", {
                method: "GET",
                headers: {
                   "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const Dashboard = () => {
       const fetchRealtimeStocksPrice = async () => {
          try {
             const response = await fetch(
-               "http://127.0.0.1:8000/api/stock/prices/",
+               "https://rohansuryawanshi.pythonanywhere.com/api/stock/prices/",
                {
                   method: "GET",
                   headers: {
@@ -113,7 +113,7 @@ const Dashboard = () => {
          try {
             // Total Portfolio Value
             const totalResponse = await fetch(
-               "http://127.0.0.1:8000/api/stock/portfolio/total/",
+               "https://rohansuryawanshi.pythonanywhere.com/api/stock/portfolio/total/",
                {
                   method: "GET",
                   headers: {
@@ -150,7 +150,7 @@ const Dashboard = () => {
       };
 
       try {
-         const response = await fetch("http://127.0.0.1:8000/api/stock/", {
+         const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/stock/", {
             method: "POST",
             headers: {
                "Content-Type": "application/json",
@@ -197,7 +197,7 @@ const Dashboard = () => {
 
       try {
          const response = await fetch(
-            `http://127.0.0.1:8000/api/stock/${editStockId}`,
+            `https://rohansuryawanshi.pythonanywhere.com/api/stock/${editStockId}`,
             {
                method: "PUT",
                headers: {
@@ -237,7 +237,7 @@ const Dashboard = () => {
       if (window.confirm("Are you sure you want to delete this stock?")) {
          try {
             const response = await fetch(
-               `http://127.0.0.1:8000/api/stock/${id}`,
+               `https://rohansuryawanshi.pythonanywhere.com/api/stock/${id}`,
                {
                   method: "DELETE",
                   headers: {

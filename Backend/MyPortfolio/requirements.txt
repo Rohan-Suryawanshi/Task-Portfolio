@@ -1,7 +1,5 @@
 django
 djangorestframework
-environs
-mysqlclient
 whitenoise
 djangorestframework-simplejwt
 django-cors-headers

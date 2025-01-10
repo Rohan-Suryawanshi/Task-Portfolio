@@ -8,7 +8,7 @@ const refreshAccessToken = async () => {
       throw new Error("No refresh token available");
    }
 
-   const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+   const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/token/refresh/", {
       method: "POST",
       headers: {
          "Content-Type": "application/json",
@@ -32,7 +32,7 @@ const get_details = async () => {
       throw new Error("No token available");
    }
 
-   const response = await fetch("http://127.0.0.1:8000/api/user/profile/", {
+   const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/user/profile/", {
       method: "GET",
       headers: {
          Authorization: `Bearer ${token}`,
@@ -47,7 +47,7 @@ const get_details = async () => {
 
          // Retry the request with the new token
          const retryResponse = await fetch(
-            "http://127.0.0.1:8000/api/user/profile/",
+            "https://rohansuryawanshi.pythonanywhere.com/api/user/profile/",
             {
                method: "GET",
                headers: {
@@ -91,7 +91,7 @@ const Login = () => {
       };
 
       try {
-         const response = await fetch("http://127.0.0.1:8000/api/user/login/", {
+         const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/user/login/", {
             method: "POST",
             headers: {
                "Content-Type": "application/json",

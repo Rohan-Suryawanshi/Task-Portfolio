@@ -22,7 +22,7 @@ const Login = () => {
       try {
          // Make POST request to register API
          const response = await fetch(
-            "http://127.0.0.1:8000/api/user/register/",
+            "https://rohansuryawanshi.pythonanywhere.com/api/user/register/",
             {
                method: "POST",
                headers: {
