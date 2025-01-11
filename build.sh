@@ -1,10 +1,15 @@
-# Activate the virtual environment
 cd Backend
-
-env\Scripts\activate
-
-# Navigate to the Django project directory
+ls
+source env/bin/activate
 cd MyPortfolio
+pip install -r requirements.txt
 
-# Run the Django development server
+echo "Running database migrations..."
+python manage.py makemigrations
+python manage.py migrate
+echo "Migration Done"
+
+python manage.py collectstatic
+
+ls
 python manage.py runserver
