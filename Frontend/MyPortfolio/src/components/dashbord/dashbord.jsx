@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from "react";
+import ReconnectingWebSocket from "reconnecting-websocket";
+import StockSearch from "./RealTime";
 
 const Dashboard = () => {
    const [isModalOpen, setIsModalOpen] = useState(false);
-   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Modal state for edit
+   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
    const [stockName, setStockName] = useState("");
    const [ticker, setTicker] = useState("");
    const [quantity, setQuantity] = useState("");
    const [buyPrice, setBuyPrice] = useState("");
    const [error, setError] = useState("");
    const [successMessage, setSuccessMessage] = useState("");
-   const [stocks, setStocks] = useState([]); // To store fetched stock data
-   const [realstocks, setRealStocks] = useState([]); // To store real-time stock data
-   const [loading, setLoading] = useState(true); // For loading state
-   const [editStockId, setEditStockId] = useState(null); // Store the ID of the stock being edited
+   const [stocks, setStocks] = useState([]);
+   const [loading, setLoading] = useState(true); // Set to true initially
+   const [editStockId, setEditStockId] = useState(null);
    const [totalPortfolioValue, setTotalPortfolioValue] = useState(0);
-
+   const [realTimePrices, setRealTimePrices] = useState({});
+   const [portfolioValue, setPortfolioValue] = useState(0);
+   const [ws, setWs] = useState(null); // Store WebSocket instance
 
    const toggleAddStockModal = () => {
       setIsModalOpen(!isModalOpen);
@@ -31,9 +34,9 @@ const Dashboard = () => {
       if (stockToEdit) {
          setEditStockId(stockId);
          setStockName(stockToEdit.name);
-         setTicker(stockToEdit.ticker);
+         setTicker(stockToEdit.symbol);
          setQuantity(stockToEdit.quantity);
-         setBuyPrice(stockToEdit.buy_price);
+         setBuyPrice(stockToEdit.buyPrice);
       }
       setIsEditModalOpen(!isEditModalOpen);
    };
@@ -51,87 +54,90 @@ const Dashboard = () => {
    const isLoggedIn = !!localStorage.getItem("token");
    const username = localStorage.getItem("name");
 
-   // Fetch stock data from the API
    useEffect(() => {
       const fetchStocks = async () => {
          try {
-            const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/stock/", {
-               method: "GET",
-               headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-               },
-            });
+            const response = await fetch(
+               "https://rohansuryawanshi.pythonanywhere.com/api/stock/",
+               {
+                  method: "GET",
+                  headers: {
+                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
+               }
+            );
 
             if (!response.ok) {
                throw new Error("Failed to fetch stock data.");
             }
 
             const data = await response.json();
-            setStocks(data); 
+            console.log("📊 Fetched Stocks:", data);
+
+            // Initialize stocks from API response
+            const formattedStocks = data.map((stock) => ({
+               id: stock.id, // Assuming 'id' is unique
+               name: stock.name,
+               symbol: stock.ticker, // Assuming 'ticker' holds the stock symbol
+               quantity: stock.quantity,
+               buyPrice: stock.buy_price,
+            }));
+
+            setStocks(formattedStocks); // ✅ Set fetched stocks
+            setLoading(false); // Set loading to false after fetching
          } catch (error) {
-            console.error("Error fetching stock data:", error);
-         } finally {
-            setLoading(false);
+            console.error("❌ Error fetching stock data:", error);
+            setLoading(false); // Handle loading state if API call fails
          }
       };
 
       fetchStocks();
    }, []);
 
-   // Fetch real-time stock price updates
    useEffect(() => {
-      const fetchRealtimeStocksPrice = async () => {
-         try {
-            const response = await fetch(
-               "https://rohansuryawanshi.pythonanywhere.com/api/stock/prices/",
-               {
-                  method: "GET",
-                  headers: {
-                     "Content-Type": "application/json",
-                     Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-               }
-            );
+      if (stocks.length > 0) {
+         const wsInstance = new ReconnectingWebSocket(
+            "wss://ws.finnhub.io?token=cu0g4hpr01ql96gqhp00cu0g4hpr01ql96gqhp0g"
+         );
+         setWs(wsInstance);
 
-            if (!response.ok) {
-               throw new Error("Failed to fetch real-time stock data.");
+         wsInstance.onopen = () => {
+            console.log("🔓 WebSocket Connected");
+            stocks.forEach((stock) =>
+               wsInstance.send(
+                  JSON.stringify({ type: "subscribe", symbol: stock.symbol })
+               )
+            );
+         };
+
+         wsInstance.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === "trade") {
+               const updates = {};
+               data.data.forEach((trade) => {
+                  updates[trade.s] = trade.p;
+               });
+               setRealTimePrices((prev) => ({ ...prev, ...updates }));
             }
+         };
 
-            const data = await response.json();
-            setRealStocks(data); // Update realstocks with real-time data
-         } catch (error) {
-            console.error("Error fetching real-time stock data:", error);
-         }
-      };
+         wsInstance.onerror = (error) =>
+            console.error("❌ WebSocket Error:", error);
+         wsInstance.onclose = () => console.log("🔒 WebSocket Disconnected");
 
-      fetchRealtimeStocksPrice();
-   }, []);
+         return () => wsInstance.close();
+      }
+   }, [stocks]); // Reconnect WebSocket only when stocks array is updated
 
+   // Calculate total portfolio value
    useEffect(() => {
-      const fetchPortfolioData = async () => {
-         try {
-            // Total Portfolio Value
-            const totalResponse = await fetch(
-               "https://rohansuryawanshi.pythonanywhere.com/api/stock/portfolio/total/",
-               {
-                  method: "GET",
-                  headers: {
-                     "Content-Type": "application/json",
-                     Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-               }
-            );
-            const totalData = await totalResponse.json();
-            setTotalPortfolioValue(totalData.total_portfolio_value);
-         } catch (error) {
-            console.error("Error fetching portfolio data:", error);
-         }
-      };
-
-      fetchPortfolioData();
-   }, []);
-
+      const totalValue = stocks.reduce((acc, stock) => {
+         const realTimePrice = realTimePrices[stock.symbol] || stock.buyPrice;
+         return acc + realTimePrice * stock.quantity;
+      }, 0);
+      setPortfolioValue(totalValue);
+   }, [realTimePrices, stocks]);
 
    // Handle form submit to add a stock
    const handleSubmit = async (e) => {
@@ -150,20 +156,24 @@ const Dashboard = () => {
       };
 
       try {
-         const response = await fetch("https://rohansuryawanshi.pythonanywhere.com/api/stock/", {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-               Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify(stockData),
-         });
+         const response = await fetch(
+            "https://rohansuryawanshi.pythonanywhere.com/api/stock/",
+            {
+               method: "POST",
+               headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+               },
+               body: JSON.stringify(stockData),
+            }
+         );
 
          if (!response.ok) {
             throw new Error("Failed to add stock.");
          }
 
          const data = await response.json();
+         console.log(data);
          setSuccessMessage("Stock added successfully!");
          setError("");
          setStockName("");
@@ -171,7 +181,22 @@ const Dashboard = () => {
          setQuantity("");
          setBuyPrice("");
          toggleAddStockModal();
-         setStocks((prevStocks) => [...prevStocks, data]);
+         setStocks((prevStocks) => [
+            ...prevStocks,
+            {
+               id: data.id, // Assuming 'id' is unique
+               name: data.name,
+               symbol: data.ticker, // Assuming 'ticker' holds the stock symbol
+               quantity: data.quantity,
+               buyPrice: data.buy_price,
+            }
+         ]);
+         console.log(stocks);
+
+         // Subscribe to the new stock symbol for real-time price
+         if (ws) {
+            ws.send(JSON.stringify({ type: "subscribe", symbol: data.ticker }));
+         }
       } catch (error) {
          console.error("Error submitting form:", error);
          setError(error.message);
@@ -222,7 +247,18 @@ const Dashboard = () => {
          setIsEditModalOpen(false);
          setStocks((prevStocks) =>
             prevStocks.map((stock) =>
-               stock.id === editStockId ? { ...stock, ...data } : stock
+               stock.id === editStockId
+                  ? {
+                       ...stock,
+                       ...{
+                          id: data.id, // Assuming 'id' is unique
+                          name: data.name,
+                          symbol: data.ticker, // Assuming 'ticker' holds the stock symbol
+                          quantity: data.quantity,
+                          buyPrice: data.buy_price,
+                       },
+                    }
+                  : stock
             )
          );
       } catch (error) {
@@ -260,14 +296,8 @@ const Dashboard = () => {
       }
    };
 
-   const getRealTimePrice = (ticker) => {
-      const stock = realstocks.find((stock) => stock.symbol === ticker);
-      return stock ? stock.price : "N/A";
-   };
-
    return (
       <div className="bg-gray-100 font-sans min-h-screen">
-         {/* Navbar */}
          <nav className="bg-blue-600 text-white p-4 shadow-md">
             <div className="container mx-auto flex justify-between items-center">
                <h1 className="text-lg font-bold">Portfolio Tracker</h1>
@@ -310,7 +340,6 @@ const Dashboard = () => {
                </ul>
             </div>
          </nav>
-
          <div className="flex flex-col md:flex-row h-screen overflow-hidden">
             <main className="flex-1 p-6 overflow-y-auto">
                <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
@@ -322,7 +351,7 @@ const Dashboard = () => {
                         Total Portfolio Value
                      </h3>
                      <p className="text-2xl font-semibold text-blue-600">
-                        ${totalPortfolioValue.toFixed(2)}
+                        ${portfolioValue.toFixed(2)}
                      </p>
                   </div>
 
@@ -333,10 +362,10 @@ const Dashboard = () => {
                      </p>
                   </div>
                </div>
+               <StockSearch/>
 
                {/* Stocks Table */}
-               <div className="overflow-x-auto bg-white p-6 rounded-lg shadow">
-                  <table className="min-w-full table-auto">
+                  {/* <table className="min-w-full table-auto">
                      <thead>
                         <tr>
                            <th className="px-4 py-2 text-left">Stock Name</th>
@@ -345,6 +374,9 @@ const Dashboard = () => {
                            <th className="px-4 py-2 text-left">Buy Price</th>
                            <th className="px-4 py-2 text-left">
                               Real-time Price
+                           </th>
+                           <th className="px-4 py-2 text-left">
+                              Current Price
                            </th>
                            <th className="px-4 py-2 text-left">Actions</th>
                         </tr>
@@ -357,44 +389,155 @@ const Dashboard = () => {
                               </td>
                            </tr>
                         ) : (
-                           stocks.map((stock) => (
-                              <tr key={stock.id}>
-                                 <td className="px-4 py-2">{stock.name}</td>
-                                 <td className="px-4 py-2">{stock.ticker}</td>
-                                 <td className="px-4 py-2">{stock.quantity}</td>
-                                 <td className="px-4 py-2">
-                                    ${stock.buy_price}
-                                 </td>
-                                 <td className="px-4 py-2">
-                                    {getRealTimePrice(stock.ticker)}
-                                 </td>
-                                 <td className="px-4 py-2">
-                                    <button
-                                       onClick={() =>
-                                          toggleEditStockModal(stock.id)
-                                       }
-                                       className="bg-yellow-500 text-white px-4 py-2 rounded"
+                           stocks.map((stock) => {
+                              const realTimePrice =
+                                 realTimePrices[stock.symbol] || stock.buyPrice;
+                              const currentValue =
+                                 realTimePrice * stock.quantity;
+                              return (
+                                 <tr key={stock.id}>
+                                    <td className="px-4 py-2">{stock.name}</td>
+                                    <td className="px-4 py-2">
+                                       {stock.symbol}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                       {stock.quantity}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                       ${stock.buyPrice}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                       ${realTimePrice.toFixed(2)}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                       ${currentValue.toFixed(2)}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                       <button
+                                          onClick={() =>
+                                             toggleEditStockModal(stock.id)
+                                          }
+                                          className="text-blue-600 hover:text-blue-800"
+                                       >
+                                          Edit
+                                       </button>
+                                       <button
+                                          onClick={() =>
+                                             handleDeleteStock(stock.id)
+                                          }
+                                          className="ml-2 text-red-600 hover:text-red-800"
+                                       >
+                                          Delete
+                                       </button>
+                                    </td>
+                                 </tr>
+                              );
+                           })
+                        )}
+                     </tbody>
+                  </table> */}
+                  <table className="min-w-full table-auto shadow-lg rounded-lg overflow-hidden">
+                     <thead className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+                        <tr>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              📈 Stock Name
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              🔖 Ticker
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              📦 Quantity
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              💵 Buy Price
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              📊 Real-time Price
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              💰 Current Value
+                           </th>
+                           <th className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                              ⚙️ Actions
+                           </th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {loading ? (
+                           <tr>
+                              <td
+                                 colSpan="7"
+                                 className="text-center py-6 text-gray-500"
+                              >
+                                 Loading...
+                              </td>
+                           </tr>
+                        ) : (
+                           stocks.map((stock, index) => {
+                              const realTimePrice =
+                                 realTimePrices[stock.symbol] || stock.buyPrice;
+                              const currentValue =
+                                 realTimePrice * stock.quantity;
+                              return (
+                                 <tr
+                                    key={stock.id}
+                                    className={
+                                       index % 2 === 0
+                                          ? "bg-white"
+                                          : "bg-gray-50 hover:bg-gray-100 transition-colors"
+                                    }
+                                 >
+                                    <td className="px-6 py-4 font-medium text-gray-900">
+                                       {stock.name}
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-700">
+                                       {stock.symbol}
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-700">
+                                       {stock.quantity}
+                                    </td>
+                                    <td className="px-6 py-4 text-green-600 font-semibold">
+                                       ${stock.buyPrice}
+                                    </td>
+                                    <td className="px-6 py-4 text-blue-600 font-semibold">
+                                       ${realTimePrice.toFixed(2)}
+                                    </td>
+                                    <td
+                                       className={`px-6 py-4 font-semibold ${
+                                          currentValue >=
+                                          stock.buyPrice * stock.quantity
+                                             ? "text-green-600"
+                                             : "text-red-600"
+                                       }`}
                                     >
-                                       Edit
-                                    </button>
-                                    <button
-                                       onClick={() =>
-                                          handleDeleteStock(stock.id)
-                                       }
-                                       className="bg-red-500 text-white px-4 py-2 rounded ml-2"
-                                    >
-                                       Delete
-                                    </button>
-                                 </td>
-                              </tr>
-                           ))
+                                       ${currentValue.toFixed(2)}
+                                    </td>
+                                    <td className="px-6 py-4 flex space-x-2">
+                                       <button
+                                          onClick={() =>
+                                             toggleEditStockModal(stock.id)
+                                          }
+                                          className="px-3 py-1 bg-yellow-400 text-white rounded-md hover:bg-yellow-500 transition-transform transform hover:scale-105"
+                                       >
+                                          ✏️ Edit
+                                       </button>
+                                       <button
+                                          onClick={() =>
+                                             handleDeleteStock(stock.id)
+                                          }
+                                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-transform transform hover:scale-105"
+                                       >
+                                          🗑️ Delete
+                                       </button>
+                                    </td>
+                                 </tr>
+                              );
+                           })
                         )}
                      </tbody>
                   </table>
-               </div>
             </main>
          </div>
-
          {/* Add Stock Modal */}
          {isModalOpen && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
@@ -488,7 +631,6 @@ const Dashboard = () => {
                </div>
             </div>
          )}
-
          {/* Edit Stock Modal */}
          {isEditModalOpen && (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
