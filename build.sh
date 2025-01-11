@@ -1,7 +1,7 @@
 # Activate the virtual environment
 cd Backend
 
-source env/Scripts/activate
+env\Scripts\activate
 
 # Navigate to the Django project directory
 cd MyPortfolio
