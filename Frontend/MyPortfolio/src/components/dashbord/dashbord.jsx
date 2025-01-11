@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import ReconnectingWebSocket from "reconnecting-websocket";
-import StockSearch from "./RealTime";
 
 const Dashboard = () => {
    const [isModalOpen, setIsModalOpen] = useState(false);
