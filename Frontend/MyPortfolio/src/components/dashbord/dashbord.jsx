@@ -362,7 +362,6 @@ const Dashboard = () => {
                      </p>
                   </div>
                </div>
-               <StockSearch/>
 
                {/* Stocks Table */}
                   {/* <table className="min-w-full table-auto">
